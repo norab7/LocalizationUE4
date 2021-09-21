@@ -31,6 +31,25 @@ namespace TranslationEditor
             return Regex.Replace(Value, "(?<!\r)\n", "\r\n");
         }
 
+        private static void FormatSheetHeader(ExcelWorksheet sheet)
+        {
+            if (sheet.Name != "Import")
+            {
+                // Appearance
+                sheet.Row(1).Style.Fill.PatternType = ExcelFillStyle.Solid;
+                sheet.Row(1).Style.Fill.BackgroundColor.SetColor(Color.Orange);
+                sheet.Row(1).Style.Font.Bold = true;
+                sheet.Row(1).Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+                // Freeze and Filter
+                sheet.View.FreezePanes(2, 1);
+                sheet.Cells[sheet.Dimension.Address].AutoFilter = true;
+            }
+
+            // AutoWidth
+            sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
+        }
+
         public static InternalFormat Import(string FileName)
         {
             var data = new InternalFormat();
@@ -109,6 +128,129 @@ namespace TranslationEditor
             }
 
             return data;
+        }
+
+        public static void Export_NewDocument(InternalFormat data, string ExcelName)
+        {
+            // Create Excel Document and Sheet Map
+            var Package = new ExcelPackage();
+            var SheetDictionary = new Dictionary<string, ExcelWorksheet>();
+
+            // Import Sheet
+            string ImportName = "Import";
+            var ImportSheet = Package.Workbook.Worksheets.Add(ImportName);
+
+            SheetDictionary.Add(ImportName, ImportSheet);
+
+            // Control Sheet
+            string ControlName = "Control";
+            var ControlSheet = Package.Workbook.Worksheets.Add(ControlName);
+
+            ControlSheet.Cells[1, 1].Value = "Key";
+            ControlSheet.Cells[1, 2].Value = "English";
+            ControlSheet.Cells[1, 3].Value = "Category";
+            ControlSheet.Cells[1, 4].Value = "Context";
+
+            FormatSheetHeader(ControlSheet);
+            SheetDictionary.Add(ControlName, ControlSheet);
+
+            // Categories Sheet
+            string CategoriesName = "Categories";
+            var CategoriesSheet = Package.Workbook.Worksheets.Add(CategoriesName);
+
+            CategoriesSheet.Cells[1, 1].Value = "Category";
+            CategoriesSheet.Cells[1, 2].Value = "Description";
+
+            CategoriesSheet.Cells[2, 1].Value = "A0";
+            CategoriesSheet.Cells[3, 1].Value = "A1";
+            CategoriesSheet.Cells[4, 1].Value = "A2";
+            CategoriesSheet.Cells[5, 1].Value = "A3";
+            CategoriesSheet.Cells[6, 1].Value = "A4";
+            CategoriesSheet.Cells[7, 1].Value = "A5";
+
+            FormatSheetHeader(CategoriesSheet);
+            SheetDictionary.Add(CategoriesName, CategoriesSheet);
+
+            // Translation Sheets
+            for (int i = 0; i < data.Cultures.Count; i++)
+            {
+                if (data.Cultures[i] == data.NativeCulture)
+                {
+                    continue;
+                }
+
+                var CultureSheet = Package.Workbook.Worksheets.Add(data.Cultures[i]);
+
+                CultureSheet.Cells[1, 1].Value = "Key";
+                CultureSheet.Cells[1, 2].Value = "Category";
+                CultureSheet.Cells[1, 3].Value = "Context";
+                CultureSheet.Cells[1, 4].Value = "English";
+                CultureSheet.Cells[1, 5].Value = "Translation";
+                CultureSheet.Cells[1, 6].Value = "Done";
+                CultureSheet.Cells[1, 7].Value = "Comment";
+
+                FormatSheetHeader(CultureSheet);
+                SheetDictionary.Add(data.Cultures[i], CultureSheet);
+            }
+
+            // Add Data Sheets
+            var index = 2;
+            foreach (var ns in data.Namespaces)
+            {
+                foreach (var rec in ns.Children)
+                {
+                    // Fill Import & Control
+                    SheetDictionary[ImportName].Cells[index - 1, 1].Value = rec.Key;
+                    SheetDictionary[ImportName].Cells[index - 1, 2].Value = rec[data.NativeCulture];
+                    SheetDictionary[ControlName].Cells[index, 1].Value = rec.Key;
+                    SheetDictionary[ControlName].Cells[index, 2].Value = rec[data.NativeCulture];
+
+                    // Fill Translation Tabs
+                    for (int i = 0; i < data.Cultures.Count; i++)
+                    {
+                        if (data.Cultures[i] == data.NativeCulture)
+                        {
+                            continue;
+                        }
+                        ExcelWorksheet sheet = SheetDictionary[data.Cultures[i]];
+
+                        sheet.Cells[index, 1].Value = rec.Key;
+                        sheet.Cells[index, 4].Value = rec[data.NativeCulture];
+                        sheet.Cells[index, 5].Value = rec[data.Cultures[i]];
+                        sheet.Cells[index, 6].Value = "";
+
+                        sheet.Column(1).Hidden = true;
+                        sheet.Column(4).Width = 75;
+                        sheet.Column(4).Style.WrapText = true;
+                        sheet.Column(5).Width = 75;
+                        sheet.Column(5).Style.WrapText = true;
+
+                        if (sheet.Name != "de")
+                        {
+                            continue;
+                        }
+                        // Format the Done column to be red if it's empty
+                        var requiredFormat = sheet.ConditionalFormatting.AddExpression(new ExcelAddress("F" + index));
+                        requiredFormat.Style.Fill.BackgroundColor.Color = Color.Red;
+                        requiredFormat.Formula = "(F" + index + " = \"\")";
+
+                        var doneFormat = sheet.ConditionalFormatting.AddExpression(new ExcelAddress("F" + index));
+                        doneFormat.Style.Fill.BackgroundColor.Color = Color.Green;
+                        doneFormat.Formula = "(F" + index + " <> \"\")";
+
+                    }
+
+                    index++;
+                }
+            }
+
+            // Import will be empty before population, format after
+            FormatSheetHeader(ImportSheet);
+
+            // Saveit
+            byte[] ExcelData = Package.GetAsByteArray();
+            File.WriteAllBytes(ExcelName, ExcelData);
+
         }
 
         public static void Export(InternalFormat data, string ExcelName)

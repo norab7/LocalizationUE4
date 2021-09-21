@@ -98,7 +98,7 @@ namespace TranslationEditor
                     MessageBox.Show(this, ex.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
-                UpdateAll();
+                // UpdateAll();
                 status.Text = "All files loaded.";
             }
         }
@@ -177,6 +177,8 @@ namespace TranslationEditor
 
         private void OnExport(object sender, EventArgs e)
         {
+            // exportDlg.OverwritePrompt = true;
+
             if (document == null)
                 return;
 
@@ -189,7 +191,9 @@ namespace TranslationEditor
                 status.Text = "Exporting... Please wait.";
                 try
                 {
-                    ExcelSerializer.Export(document, exportDlg.FileName);
+                    MessageBox.Show(this, "Warning, Exporting will take time, be patient", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    ExcelSerializer.Export_NewDocument(document, exportDlg.FileName);
+                    MessageBox.Show(this, "Export Complete", "Export", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
