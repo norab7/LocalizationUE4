@@ -161,12 +161,13 @@ namespace TranslationEditor
             CategoriesSheet.Cells[1, 1].Value = "Category";
             CategoriesSheet.Cells[1, 2].Value = "Description";
 
-            CategoriesSheet.Cells[2, 1].Value = "A0";
-            CategoriesSheet.Cells[3, 1].Value = "A1";
-            CategoriesSheet.Cells[4, 1].Value = "A2";
-            CategoriesSheet.Cells[5, 1].Value = "A3";
-            CategoriesSheet.Cells[6, 1].Value = "A4";
-            CategoriesSheet.Cells[7, 1].Value = "A5";
+            CategoriesSheet.Cells[2, 1].Value = "None";
+            CategoriesSheet.Cells[3, 1].Value = "A0";
+            CategoriesSheet.Cells[4, 1].Value = "A1";
+            CategoriesSheet.Cells[5, 1].Value = "A2";
+            CategoriesSheet.Cells[6, 1].Value = "A3";
+            CategoriesSheet.Cells[7, 1].Value = "A4";
+            CategoriesSheet.Cells[8, 1].Value = "A5";
 
             FormatSheetHeader(CategoriesSheet);
             SheetDictionary.Add(CategoriesName, CategoriesSheet);
