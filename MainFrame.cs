@@ -373,7 +373,7 @@ namespace TranslationEditor
         public void OnIdle(object sender, EventArgs e)
         {
             saveMenuBtn.Enabled = (document != null) && (fileName != "");
-            saveToolBtn.Enabled = (document != null) && (fileName != "");
+            saveToolBtn.Enabled = (document != null)  && (fileName != "");
             saveAsMenuBtn.Enabled = (document != null);
             exportMenuBtn.Enabled = (document != null);
             exportToolBtn.Enabled = (document != null);

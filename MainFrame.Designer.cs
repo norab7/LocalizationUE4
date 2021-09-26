@@ -367,13 +367,11 @@
             // saveToolBtn
             // 
             this.saveToolBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.saveToolBtn.Enabled = false;
             this.saveToolBtn.Image = global::TranslationEditor.Properties.Resources.icons8_save;
             this.saveToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.saveToolBtn.Name = "saveToolBtn";
             this.saveToolBtn.Size = new System.Drawing.Size(23, 22);
             this.saveToolBtn.Text = "Save";
-            this.saveToolBtn.Visible = false;
             this.saveToolBtn.Click += new System.EventHandler(this.OnSave);
             // 
             // toolStripSeparator5
