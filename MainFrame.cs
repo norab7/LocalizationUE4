@@ -20,6 +20,7 @@ namespace TranslationEditor
         private string fileName = "";
         private string manifestDir = "";
         private string exportDir = "";
+        private string customDelimiter = "<,>";
 
         private FindDialog findDlg = null;
 
@@ -52,9 +53,12 @@ namespace TranslationEditor
 
         private void OnOpen(object sender, EventArgs e)
         {
+
+            // If there is a manifest dir, open dialog at the same location
             if (manifestDir != "")
                 openDlg.InitialDirectory = manifestDir;
 
+            // If file is chosen to open
             if (openDlg.ShowDialog(this) == DialogResult.OK)
             {
                 manifestDir = Path.GetDirectoryName(openDlg.FileName);
@@ -98,7 +102,7 @@ namespace TranslationEditor
                     MessageBox.Show(this, ex.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
 
-                // UpdateAll();
+                UpdateAll();
                 status.Text = "All files loaded.";
             }
         }
@@ -164,12 +168,14 @@ namespace TranslationEditor
                 status.Text = "Importing... Please wait.";
                 try
                 {
-                    document = ExcelSerializer.Import(importDlg.FileName);
+                    document = ExcelSerializer.Import_New(importDlg.FileName);
+                    // document = ExcelSerializer.Import(importDlg.FileName);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, ex.Message, "Error!", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+
                 UpdateAll();
                 status.Text = "Import finished.";
             }
@@ -177,7 +183,6 @@ namespace TranslationEditor
 
         private void OnExport(object sender, EventArgs e)
         {
-            // exportDlg.OverwritePrompt = true;
 
             if (document == null)
                 return;
@@ -209,24 +214,52 @@ namespace TranslationEditor
 
         private void OnCopy(object sender, EventArgs e)
         {
-            if (translationEdit.Focused)
-                translationEdit.Copy();
-            else
+            StringBuilder sb = new StringBuilder();
+            var numberRows = dataGrid.Rows.Count;
+
+            if (dataGrid.Rows.Count > 0)
             {
-                if (dataGrid.SelectedRows.Count > 0)
+                for (var i = 0; i < numberRows; i++)
                 {
-                    DataGridViewRow row = dataGrid.SelectedRows[0];
-                    string text = row.Cells[4].Value.ToString();
-                    if (escapingCharactersMenuBtn.Checked)
-                        text = text.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
-                    if (text.Length > 0)
-                        Clipboard.SetText(text);
-                    else
-                        Clipboard.Clear();
+                    DataGridViewRow row = dataGrid.Rows[i];
+                    InternalRecord record = (InternalRecord)row.Tag;
+                    if (record != null)
+                    {
+                        var key = record.Key;
+                        var source = record.Source;
+                        var ns = (row.Cells[1].Value != null) ? row.Cells[1].Value.ToString() : "";
+                        var path = record.Path;
+                        var text = (key + customDelimiter + source + customDelimiter + ns + customDelimiter + path).Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\""); ;
+                        sb.Append(text + "\n");
+                    }
                 }
-                else
-                    SystemSounds.Beep.Play();
+                Clipboard.SetText(sb.ToString());
+
+                MessageBox.Show(this, "Warning:\nData copied uses the custom delimiter\n\n" + customDelimiter, "Delimiter", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
+
+            return;
+
+            // OLD COPY CODE
+
+            //if (translationEdit.Focused)
+            //    translationEdit.Copy();
+            //else
+            //{
+            //    if (dataGrid.SelectedRows.Count > 0)
+            //    {
+            //        DataGridViewRow row = dataGrid.SelectedRows[0];
+            //        string text = row.Cells[4].Value.ToString();
+            //        if (escapingCharactersMenuBtn.Checked)
+            //            text = text.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
+            //        if (text.Length > 0)
+            //            Clipboard.SetText(text);
+            //        else
+            //            Clipboard.Clear();
+            //    }
+            //    else
+            //        SystemSounds.Beep.Play();
+            //}
         }
 
         private void OnPaste(object sender, EventArgs e)
@@ -362,6 +395,8 @@ namespace TranslationEditor
             OnSelectedIndexChanged(this, null);
         }
 
+
+        // Updates the dropdown box that contains all the different translations
         private void UpdateCultureCombo()
         {
             if (document == null)
@@ -382,6 +417,7 @@ namespace TranslationEditor
             }
         }
 
+
         private void UpdateLocaleListWithoutTranslation()
         {
             dataGrid.SuspendLayout();
@@ -393,12 +429,15 @@ namespace TranslationEditor
                 {
                     foreach (var rec in ns.Children)
                     {
+                        // UID, Namespace, Key, Source
                         dataGrid.Rows.Add(new string[]
                         {
                             (index + 1).ToString(),
                             ns.Name, rec.Key,
                             rec.Source, ""
                         });
+
+                        // Tag contains the entire record for later access ?
                         dataGrid.Rows[index].Tag = rec;
 
                         // Compare native culture and source text (must be the same)
@@ -417,6 +456,7 @@ namespace TranslationEditor
             dataGrid.ResumeLayout();
         }
 
+        // Update translation column using datagrid tag value
         private void UpdateLocaleListTranslation()
         {
             dataGrid.SuspendLayout();
@@ -432,6 +472,7 @@ namespace TranslationEditor
             dataGrid.ResumeLayout();
         }
 
+        // Update data grid row visibility based on the 'HideTranslations' button
         private void UpdateVisibility()
         {
             dataGrid.SuspendLayout();
@@ -561,6 +602,11 @@ namespace TranslationEditor
             hideTranslatedMenuBtn.Checked = !hideTranslatedMenuBtn.Checked;
             hideTranslatedToolBtn.Checked = hideTranslatedMenuBtn.Checked;
             UpdateVisibility();
+        }
+
+        private void txtCustomDelimiter_TextChanged(object sender, EventArgs e)
+        {
+            customDelimiter = txtCustomDelimiter.Text;
         }
     }
 }

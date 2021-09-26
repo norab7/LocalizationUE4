@@ -71,6 +71,8 @@
             this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
             this.hideTranslatedToolBtn = new System.Windows.Forms.ToolStripButton();
             this.findToolBtn = new System.Windows.Forms.ToolStripButton();
+            this.lblCustomDelimiter = new System.Windows.Forms.ToolStripLabel();
+            this.txtCustomDelimiter = new System.Windows.Forms.ToolStripTextBox();
             this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
             this.aboutToolBtn = new System.Windows.Forms.ToolStripButton();
             this.openDlg = new System.Windows.Forms.OpenFileDialog();
@@ -134,19 +136,23 @@
             // 
             // saveMenuBtn
             // 
+            this.saveMenuBtn.Enabled = false;
             this.saveMenuBtn.Image = global::TranslationEditor.Properties.Resources.icons8_save;
             this.saveMenuBtn.Name = "saveMenuBtn";
             this.saveMenuBtn.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
             this.saveMenuBtn.Size = new System.Drawing.Size(194, 22);
             this.saveMenuBtn.Text = "Save";
+            this.saveMenuBtn.Visible = false;
             this.saveMenuBtn.Click += new System.EventHandler(this.OnSave);
             // 
             // saveAsMenuBtn
             // 
+            this.saveAsMenuBtn.Enabled = false;
             this.saveAsMenuBtn.Image = global::TranslationEditor.Properties.Resources.icons8_save_as;
             this.saveAsMenuBtn.Name = "saveAsMenuBtn";
             this.saveAsMenuBtn.Size = new System.Drawing.Size(194, 22);
             this.saveAsMenuBtn.Text = "Save As...";
+            this.saveAsMenuBtn.Visible = false;
             this.saveAsMenuBtn.Click += new System.EventHandler(this.OnSaveAs);
             // 
             // toolStripMenuItem2
@@ -210,19 +216,23 @@
             // 
             // pasteMenuBtn
             // 
+            this.pasteMenuBtn.Enabled = false;
             this.pasteMenuBtn.Image = global::TranslationEditor.Properties.Resources.icons8_paste;
             this.pasteMenuBtn.Name = "pasteMenuBtn";
             this.pasteMenuBtn.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.V)));
             this.pasteMenuBtn.Size = new System.Drawing.Size(180, 22);
             this.pasteMenuBtn.Text = "Paste";
+            this.pasteMenuBtn.Visible = false;
             this.pasteMenuBtn.Click += new System.EventHandler(this.OnPaste);
             // 
             // duplicateMenuBtn
             // 
+            this.duplicateMenuBtn.Enabled = false;
             this.duplicateMenuBtn.Name = "duplicateMenuBtn";
             this.duplicateMenuBtn.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.D)));
             this.duplicateMenuBtn.Size = new System.Drawing.Size(180, 22);
             this.duplicateMenuBtn.Text = "Duplicate";
+            this.duplicateMenuBtn.Visible = false;
             this.duplicateMenuBtn.Click += new System.EventHandler(this.OnDuplicate);
             // 
             // toolStripMenuItem3
@@ -232,10 +242,12 @@
             // 
             // escapingCharactersMenuBtn
             // 
+            this.escapingCharactersMenuBtn.Enabled = false;
             this.escapingCharactersMenuBtn.Name = "escapingCharactersMenuBtn";
             this.escapingCharactersMenuBtn.Size = new System.Drawing.Size(180, 22);
             this.escapingCharactersMenuBtn.Text = "Escaping Characters";
             this.escapingCharactersMenuBtn.ToolTipText = "Removes escaping characters on copy/paste actions.";
+            this.escapingCharactersMenuBtn.Visible = false;
             this.escapingCharactersMenuBtn.Click += new System.EventHandler(this.OnReplaceNewLine);
             // 
             // viewToolStripMenuItem
@@ -243,9 +255,11 @@
             this.viewToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.findMenuBtn,
             this.hideTranslatedMenuBtn});
+            this.viewToolStripMenuItem.Enabled = false;
             this.viewToolStripMenuItem.Name = "viewToolStripMenuItem";
             this.viewToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.viewToolStripMenuItem.Text = "View";
+            this.viewToolStripMenuItem.Visible = false;
             // 
             // findMenuBtn
             // 
@@ -330,6 +344,8 @@
             this.toolStripSeparator4,
             this.hideTranslatedToolBtn,
             this.findToolBtn,
+            this.lblCustomDelimiter,
+            this.txtCustomDelimiter,
             this.toolStripSeparator3,
             this.aboutToolBtn});
             this.toolbar.Location = new System.Drawing.Point(0, 24);
@@ -351,11 +367,13 @@
             // saveToolBtn
             // 
             this.saveToolBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.saveToolBtn.Enabled = false;
             this.saveToolBtn.Image = global::TranslationEditor.Properties.Resources.icons8_save;
             this.saveToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.saveToolBtn.Name = "saveToolBtn";
             this.saveToolBtn.Size = new System.Drawing.Size(23, 22);
             this.saveToolBtn.Text = "Save";
+            this.saveToolBtn.Visible = false;
             this.saveToolBtn.Click += new System.EventHandler(this.OnSave);
             // 
             // toolStripSeparator5
@@ -370,17 +388,19 @@
             this.copyToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.copyToolBtn.Name = "copyToolBtn";
             this.copyToolBtn.Size = new System.Drawing.Size(23, 22);
-            this.copyToolBtn.Text = "Copy to Clipboard";
+            this.copyToolBtn.Text = "Copy Import Data";
             this.copyToolBtn.Click += new System.EventHandler(this.OnCopy);
             // 
             // pasteToolBtn
             // 
             this.pasteToolBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.pasteToolBtn.Enabled = false;
             this.pasteToolBtn.Image = global::TranslationEditor.Properties.Resources.icons8_paste;
             this.pasteToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.pasteToolBtn.Name = "pasteToolBtn";
             this.pasteToolBtn.Size = new System.Drawing.Size(23, 22);
             this.pasteToolBtn.Text = "Paste from Clipboard";
+            this.pasteToolBtn.Visible = false;
             this.pasteToolBtn.Click += new System.EventHandler(this.OnPaste);
             // 
             // toolStripSeparator1
@@ -434,23 +454,41 @@
             // hideTranslatedToolBtn
             // 
             this.hideTranslatedToolBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.hideTranslatedToolBtn.Enabled = false;
             this.hideTranslatedToolBtn.Image = global::TranslationEditor.Properties.Resources.icons8_show;
             this.hideTranslatedToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.hideTranslatedToolBtn.Name = "hideTranslatedToolBtn";
             this.hideTranslatedToolBtn.Size = new System.Drawing.Size(23, 22);
             this.hideTranslatedToolBtn.Text = "Hide Translated";
             this.hideTranslatedToolBtn.ToolTipText = "Hide Translated";
+            this.hideTranslatedToolBtn.Visible = false;
             this.hideTranslatedToolBtn.Click += new System.EventHandler(this.OnHideTranslated);
             // 
             // findToolBtn
             // 
             this.findToolBtn.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.findToolBtn.Enabled = false;
             this.findToolBtn.Image = global::TranslationEditor.Properties.Resources.icons8_search;
             this.findToolBtn.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.findToolBtn.Name = "findToolBtn";
             this.findToolBtn.Size = new System.Drawing.Size(23, 22);
             this.findToolBtn.Text = "Find Text";
+            this.findToolBtn.Visible = false;
             this.findToolBtn.Click += new System.EventHandler(this.OnShowFind);
+            // 
+            // lblCustomDelimiter
+            // 
+            this.lblCustomDelimiter.Name = "lblCustomDelimiter";
+            this.lblCustomDelimiter.Size = new System.Drawing.Size(55, 22);
+            this.lblCustomDelimiter.Text = "Delimiter";
+            // 
+            // txtCustomDelimiter
+            // 
+            this.txtCustomDelimiter.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.txtCustomDelimiter.Name = "txtCustomDelimiter";
+            this.txtCustomDelimiter.Size = new System.Drawing.Size(35, 25);
+            this.txtCustomDelimiter.Text = "<,>";
+            this.txtCustomDelimiter.TextChanged += new System.EventHandler(this.txtCustomDelimiter_TextChanged);
             // 
             // toolStripSeparator3
             // 
@@ -736,6 +774,8 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn colSource;
         private System.Windows.Forms.DataGridViewTextBoxColumn colTranslation;
         private System.Windows.Forms.SaveFileDialog exportDlg;
+        private System.Windows.Forms.ToolStripLabel lblCustomDelimiter;
+        private System.Windows.Forms.ToolStripTextBox txtCustomDelimiter;
     }
 }
 

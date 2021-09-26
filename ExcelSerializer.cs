@@ -50,8 +50,183 @@ namespace TranslationEditor
             sheet.Cells[sheet.Dimension.Address].AutoFitColumns();
         }
 
+        public static InternalFormat Import_New(string fileName)
+        {
+            // Empty Data Object
+            var data = new InternalFormat();
+            data.Cultures = new List<string>() { "en" }; // hard add 'en'
+            data.NativeCulture = "en";
+
+            // Prime sheet names
+            var primeSheetNames = new List<string>() { "Import", "Control", "Categories" };
+
+            // Excel Object Data
+            var fileInfo = new FileInfo(fileName);
+            var Package = new ExcelPackage(fileInfo);
+            var worksheetMap = new Dictionary<string, ExcelWorksheet>();
+
+            // Add each worksheet to map with culture key and add key to data cultures
+            foreach (var worksheet in Package.Workbook.Worksheets)
+            {
+                if (!primeSheetNames.Contains(worksheet.Name))
+                {
+                    var cultureName = worksheet.Name;
+                    worksheetMap.Add(cultureName, worksheet);
+                    data.Cultures.Add(cultureName);
+                    // Console.WriteLine(cultureName);
+                }
+            }
+
+            // Create empty records list and get importsheet data
+            List<InternalRecord> records = new List<InternalRecord>();
+            var ImportSheet = Package.Workbook.Worksheets["Import"];
+            var ImportRowCount = ImportSheet.Dimension.Rows;
+
+            // Iterate each row in ImportSheet
+            for (var row = 1; row <= ImportRowCount; row++)
+            {
+                var ImportKey = ImportSheet.Cells[row, 1].Text;
+
+                // Create single record and populate with values from import sheet
+                InternalRecord record = new InternalRecord();
+                record.Key = ImportKey;
+                record.Translations = new List<InternalText>(ImportRowCount);
+                record.Source = SafeMultilineText(ImportSheet.Cells[row, 2].Text);
+                record.Path = ImportSheet.Cells[row, 4].Text;
+
+                // Add native 'en' translation from ImportSheet
+                InternalText nativeTranslation = new InternalText();
+                nativeTranslation.Culture = "en";
+                nativeTranslation.Text = SafeMultilineText(ImportSheet.Cells[row, 2].Text);
+                record.Translations.Add(nativeTranslation);
+
+                // Iterate each translation sheet for key and translation text
+                foreach (string culture in worksheetMap.Keys)
+                {
+                    var cultureSheet = worksheetMap[culture];
+                    var cultureRowCount = cultureSheet.Dimension.Rows;
+
+                    InternalText translation = new InternalText();
+                    translation.Culture = culture;
+
+                    // Iterate each row in the culturesheet for matching import key value
+                    for (var cultureRow = 2; cultureRow < cultureRowCount; cultureRow++)
+                    {
+                        var cultureKey = cultureSheet.Cells[cultureRow, 1].Text;
+
+                        // If matching import/culture key, add translation text to translation object and break;
+                        if (ImportKey == cultureKey)
+                        {
+                            translation.Text = SafeMultilineText(cultureSheet.Cells[cultureRow, 5].Text);
+                            break;
+                        }
+                    }
+                    // Add translation object to record
+                    record.Translations.Add(translation);
+                }
+                // Add entire record of all translations to List<InternalRecord> object
+                var outTranslations = record.Translations;
+                // Console.WriteLine(record.Key + " :: " + outTranslations[0].Text + " -- " + outTranslations[1].Text + " -- " + outTranslations[outTranslations.Count - 1].Text);
+                records.Add(record);
+            }
+
+
+            data.Namespaces = new List<InternalNamespace>();
+            InternalNamespace lastNS = null;
+
+            // Iterate Import again to reorganise records into Namespaces
+            for (var row = 1; row <= ImportRowCount; row++)
+            {
+                // Get stored record for comparison and appending
+                InternalRecord record = records[row - 1];
+                var recordKey = record.Key;
+                var ImportKey = ImportSheet.Cells[row, 1].Text;
+
+                // Console.WriteLine("Import/Record: " + ImportKey + " / " + recordKey);
+
+                if (ImportKey != recordKey)
+                {
+                    Console.WriteLine("UnexpectedKey: " + recordKey);
+                    throw new FormatException("Unexpected Key: " + recordKey);
+                }
+
+
+                // Is stored namespace null or different to current row namespace
+                var ns = ImportSheet.Cells[row, 3].Text;
+                if (lastNS == null || lastNS.Name != ns)
+                {
+                    // Create new namespace and add to data
+                    lastNS = new InternalNamespace();
+                    lastNS.Name = ns;
+                    lastNS.Children = new List<InternalRecord>();
+                    data.Namespaces.Add(lastNS);
+                    // Console.WriteLine("NewNamespace: " + ns);
+                }
+                lastNS.Children.Add(record);
+            }
+
+            //foreach (var record in records)
+            //{
+            //    foreach (var trans in record.Translations)
+            //    {
+            //        if (trans.Culture == "")
+            //        {
+            //            Console.WriteLine(record.Key + ": " + trans.Culture + " - " + trans.Text);
+            //        }
+            //    }
+            //}
+
+            return data;
+        }
+
         public static InternalFormat Import(string FileName)
         {
+            /*
+            ### Creating Records ###
+
+            Setup Data and empty objects
+
+            Iterate all culture name (en,de,es...)
+                add to data.cultures
+
+            Create empty records object
+
+            Iterate all ROWs down to *DO NOT TRANSLATE*
+                Create empty record
+                Set record key
+                Set empty translations List<InternalText>
+
+                Iterate each culture name as COLUMN (en,de,es...)
+                    Create empty translation text
+                    Set TranslationText.culture to current culture
+                    Set TranslationText.Text to current [ROW,COLUMN] text value (SafeMultiLineText())
+                    Add TranslationText to record
+                
+                Add populated record to records
+
+            ### Adding Path and Namespace ###
+
+            Set data.Namespaces to empty List<InternalNamespace>
+            Create empty temporary InternalNamespace object
+
+            Continue Iterating over ROWs after *DO NOT TRANSLATE* line
+                Get current ROW source, namespace, key, path values
+
+                If LastNS is empty or has different namespace
+                    Set LastNS to empty InternalNamespace
+                    Set LastNS name to current namespace
+                    Set LastNS children to empty List<InternalRecord>
+                    Add namespace to Data
+
+                Get matching record from records object
+                Set record source to source (native translation)
+                Set record path
+                Add record to to lastNS children list
+
+            return data
+
+            */
+
             var data = new InternalFormat();
 
             var fileInfo = new FileInfo(FileName);
@@ -63,7 +238,7 @@ namespace TranslationEditor
             int columnCount = Worksheet.Dimension.End.Column;
             var Cells = Worksheet.Cells;
 
-            // read native and other cultures
+            // read native and other culture column heading
             data.Cultures = new List<string>();
             for (int col = 3; col <= columnCount; col++)
             {
@@ -80,17 +255,26 @@ namespace TranslationEditor
             int cultureCount = data.Cultures.Count;
             List<InternalRecord> records = new List<InternalRecord>(rowCount / 2);
 
-            // read all translation keys
+
+            // read all translation keys down to <<DO NOT TRANSLATE>>
             for (; Cells[index, 1].Text != serviceData; index++)
             {
+                // Create new record and add Key Value
                 InternalRecord record = new InternalRecord();
                 record.Key = GetKey(Cells[index, 2].Text);
+
+                // Create new Translation list
                 record.Translations = new List<InternalText>(cultureCount);
+
+                // Iterate through translations
                 for (int culture = 0; culture < cultureCount; culture++)
                 {
+                    // Create new translation text add current iterated culture and translation
                     InternalText translation = new InternalText();
                     translation.Culture = data.Cultures[culture];
                     translation.Text = SafeMultilineText(Cells[index, culture + 3].Text);
+
+                    // Add cultures translation text to current record
                     record.Translations.Add(translation);
                 }
                 records.Add(record);
@@ -203,6 +387,9 @@ namespace TranslationEditor
                     // Fill Import & Control
                     SheetDictionary[ImportName].Cells[index - 1, 1].Value = rec.Key;
                     SheetDictionary[ImportName].Cells[index - 1, 2].Value = rec[data.NativeCulture];
+                    SheetDictionary[ImportName].Cells[index - 1, 3].Value = ns.Name;
+                    SheetDictionary[ImportName].Cells[index - 1, 4].Value = rec.Path;
+
                     SheetDictionary[ControlName].Cells[index, 1].Value = rec.Key;
                     SheetDictionary[ControlName].Cells[index, 2].Value = rec[data.NativeCulture];
 
@@ -256,6 +443,9 @@ namespace TranslationEditor
 
         public static void Export(InternalFormat data, string ExcelName)
         {
+
+            // Source / Namespace / Key / Directory
+
             var Package = new ExcelPackage();
             var Worksheet = Package.Workbook.Worksheets.Add("Translation");
 
