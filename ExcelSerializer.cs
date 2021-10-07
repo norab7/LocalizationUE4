@@ -10,7 +10,25 @@ namespace TranslationEditor
 {
     public static class ExcelSerializer
     {
+        // Service Data Row Text
         private const string serviceData = "--== !!! DO NOT TRANSLATE THE TEXT BELOW !!! == SERVICE DATA ==--";
+
+        // Some values so that they are ALWAYS the same spelling regardless how they are used (damn typo bugs) and that all words looked weird when i did this
+        // Sheets
+        private const string IMPORT = "Import";
+        private const string CONTROL = "Control";
+        private const string CULTURE = "Culture";
+
+        // Column Headers
+        private const string ID = "ID";
+        private const string KEY = "Key";
+        private const string CONTEXT = "Context";
+        private const string SOURCE = "Source";
+        private const string TRANSLATION = "Translation";
+        private const string DONE = "Done";
+        private const string COMMENT = "Comment";
+        private const string NAMESPACE = "Namespace";
+        private const string PATH = "Path";
 
         private static string MakeName(string Namespace, string Key)
         {
@@ -31,19 +49,80 @@ namespace TranslationEditor
             return Regex.Replace(Value, "(?<!\r)\n", "\r\n");
         }
 
+        // Create single worksheet based on sheetname and columns
+        private static ExcelWorksheet CreateSingleWorksheet(ref ExcelPackage package, string sheetName, List<string> columns)
+        {
+            var worksheet = package.Workbook.Worksheets.Add(sheetName);
+            if (columns.Count > 0)
+            {
+                for (var columnIndex = 0; columnIndex < columns.Count; columnIndex++)
+                {
+                    worksheet.Cells[1, columnIndex + 1].Value = columns[columnIndex];
+                }
+            }
+            return worksheet;
+        }
+
+        // Create a list of worksheets based on a list of sheetnames and columns
+        private static List<ExcelWorksheet> CreateMultipleWorksheets(ref ExcelPackage package, List<string> cultureNames, List<string> columns)
+        {
+            var cultureSheets = new List<ExcelWorksheet>();
+            for (var cultureIndex = 0; cultureIndex < cultureNames.Count; cultureIndex++)
+            {
+                cultureSheets.Add(CreateSingleWorksheet(ref package, cultureNames[cultureIndex], columns));
+            }
+            return cultureSheets;
+        }
+
+        // Get the cell column index where the cell value is equal to header
+        private static int GetColumnIndexFromHeader(ExcelWorksheet Worksheet, string header)
+        {
+            for (var columnIndex = 1; columnIndex <= Worksheet.Dimension.Columns; columnIndex++)
+            {
+                if ((string)Worksheet.Cells[1, columnIndex].Value == header)
+                {
+                    return columnIndex;
+                }
+            }
+            return -1;
+        }
+
+        // Set a worksheet row to record data based on column header values
+        private static void SetSingleWorksheetRowByColumnData(ref ExcelPackage package, string sheetName, int rowIndex, List<string> columns, InternalRecord rec)
+        {
+            foreach (string column in columns)
+            {
+                int columnIndex = GetColumnIndexFromHeader(package.Workbook.Worksheets[sheetName], column);
+                if (columnIndex != -1)
+                {
+                    package.Workbook.Worksheets[sheetName].Cells[rowIndex, columnIndex].Value = rec[(column == TRANSLATION ? sheetName : column)];
+                }
+            }
+        }
+
+        // Set multiple worksheets rows to record data based on column header values
+        private static void SetMultipleWorksheetRowsByColumnData(ref ExcelPackage package, List<string> sheetNames, int rowIndex, List<string> columns, InternalRecord rec)
+        {
+            for (var worksheetIndex = 0; worksheetIndex < sheetNames.Count; worksheetIndex++)
+            {
+                SetSingleWorksheetRowByColumnData(ref package, package.Workbook.Worksheets[sheetNames[worksheetIndex]].Name, rowIndex, columns, rec);
+            }
+        }
+
         private static void FormatSheetHeader(ExcelWorksheet sheet)
         {
+            // Some parts of formatting are so much easier to just do manually after document export
             if (sheet.Name != "Import")
             {
                 // Appearance
                 sheet.Row(1).Style.Fill.PatternType = ExcelFillStyle.Solid;
                 sheet.Row(1).Style.Fill.BackgroundColor.SetColor(Color.Orange);
-                sheet.Row(1).Style.Font.Bold = true;
                 sheet.Row(1).Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                // sheet.Row(1).Style.Font.Bold = true;
 
-                // Freeze and Filter
-                sheet.View.FreezePanes(2, 1);
-                sheet.Cells[sheet.Dimension.Address].AutoFilter = true;
+                // Freeze and Filter (Easier to do post upload on the actual googlesheet
+                //sheet.View.FreezePanes(2, 1);
+                //sheet.Cells[sheet.Dimension.Address].AutoFilter = true;
             }
 
             // AutoWidth
@@ -264,124 +343,50 @@ namespace TranslationEditor
 
         public static void Export_NewDocument(InternalFormat data, string ExcelName)
         {
+            // Excel Layout
+            Dictionary<string, List<string>> LAYOUT = new Dictionary<string, List<string>>()
+            {
+                {IMPORT,  new List<string>() },
+                {CONTROL, new List<string>(){ ID, KEY, SOURCE, CONTEXT} },
+                {CULTURE, new List<string>(){ ID, KEY, CONTEXT, SOURCE, TRANSLATION, DONE, COMMENT} }
+            };
+
             // Create Excel Document and Sheet Map
             var Package = new ExcelPackage();
-            var SheetDictionary = new Dictionary<string, ExcelWorksheet>();
 
-            // Import Sheet
-            string ImportName = "Import";
-            var ImportSheet = Package.Workbook.Worksheets.Add(ImportName);
-
-            SheetDictionary.Add(ImportName, ImportSheet);
-
-            // Control Sheet
-            string ControlName = "Control";
-            var ControlSheet = Package.Workbook.Worksheets.Add(ControlName);
-
-            ControlSheet.Cells[1, 1].Value = "Key";
-            ControlSheet.Cells[1, 2].Value = "English";
-            ControlSheet.Cells[1, 3].Value = "Category";
-            ControlSheet.Cells[1, 4].Value = "Context";
-
-            FormatSheetHeader(ControlSheet);
-            SheetDictionary.Add(ControlName, ControlSheet);
-
-            // Categories Sheet
-            string CategoriesName = "Categories";
-            var CategoriesSheet = Package.Workbook.Worksheets.Add(CategoriesName);
-
-            CategoriesSheet.Cells[1, 1].Value = "Category";
-            CategoriesSheet.Cells[1, 2].Value = "Description";
-
-            CategoriesSheet.Cells[2, 1].Value = "None";
-            CategoriesSheet.Cells[3, 1].Value = "A0";
-            CategoriesSheet.Cells[4, 1].Value = "A1";
-            CategoriesSheet.Cells[5, 1].Value = "A2";
-            CategoriesSheet.Cells[6, 1].Value = "A3";
-            CategoriesSheet.Cells[7, 1].Value = "A4";
-            CategoriesSheet.Cells[8, 1].Value = "A5";
-
-            FormatSheetHeader(CategoriesSheet);
-            SheetDictionary.Add(CategoriesName, CategoriesSheet);
-
-            // Translation Sheets
-            for (int i = 0; i < data.Cultures.Count; i++)
+            // Generate Column Headers
+            foreach (string sheetName in LAYOUT.Keys)
             {
-                if (data.Cultures[i] == data.NativeCulture)
+                if (sheetName == CULTURE)
                 {
-                    continue;
+                    CreateMultipleWorksheets(ref Package, data.Cultures, LAYOUT[sheetName]);
                 }
-
-                var CultureSheet = Package.Workbook.Worksheets.Add(data.Cultures[i]);
-
-                CultureSheet.Cells[1, 1].Value = "Key";
-                CultureSheet.Cells[1, 2].Value = "Category";
-                CultureSheet.Cells[1, 3].Value = "Context";
-                CultureSheet.Cells[1, 4].Value = "English";
-                CultureSheet.Cells[1, 5].Value = "Translation";
-                CultureSheet.Cells[1, 6].Value = "Done";
-                CultureSheet.Cells[1, 7].Value = "Comment";
-
-                FormatSheetHeader(CultureSheet);
-                SheetDictionary.Add(data.Cultures[i], CultureSheet);
+                else
+                {
+                    CreateSingleWorksheet(ref Package, sheetName, LAYOUT[sheetName]);
+                }
             }
 
-            // Add Data Sheets
-            var index = 2;
+            // Add Data to Sheets
+            var rowIndex = 2; // 0: null, 1: columnheaders, 2: first blank row
             foreach (var ns in data.Namespaces)
             {
                 foreach (var rec in ns.Children)
                 {
-                    // Fill Import & Control
-                    SheetDictionary[ImportName].Cells[index - 1, 1].Value = rec.Key;
-                    SheetDictionary[ImportName].Cells[index - 1, 2].Value = rec[data.NativeCulture];
-                    SheetDictionary[ImportName].Cells[index - 1, 3].Value = ns.Name;
-                    SheetDictionary[ImportName].Cells[index - 1, 4].Value = rec.Path;
-
-                    SheetDictionary[ControlName].Cells[index, 1].Value = rec.Key;
-                    SheetDictionary[ControlName].Cells[index, 2].Value = rec[data.NativeCulture];
-
-                    // Fill Translation Tabs
-                    for (int i = 0; i < data.Cultures.Count; i++)
+                    foreach (string sheetName in LAYOUT.Keys)
                     {
-                        if (data.Cultures[i] == data.NativeCulture)
+                        if (sheetName == CULTURE)
                         {
-                            continue;
+                            SetMultipleWorksheetRowsByColumnData(ref Package, data.Cultures, rowIndex, LAYOUT[sheetName], rec);
                         }
-                        ExcelWorksheet sheet = SheetDictionary[data.Cultures[i]];
-
-                        sheet.Cells[index, 1].Value = rec.Key;
-                        sheet.Cells[index, 4].Value = rec[data.NativeCulture];
-                        sheet.Cells[index, 5].Value = rec[data.Cultures[i]];
-                        sheet.Cells[index, 6].Value = "";
-
-                        sheet.Column(1).Hidden = true;
-                        sheet.Column(4).Width = 75;
-                        sheet.Column(4).Style.WrapText = true;
-                        sheet.Column(5).Width = 75;
-                        sheet.Column(5).Style.WrapText = true;
-
-                        if (sheet.Name != "de")
+                        else
                         {
-                            continue;
+                            SetSingleWorksheetRowByColumnData(ref Package, sheetName, rowIndex, LAYOUT[sheetName], rec);
                         }
-                        // Format the Done column to be red if it's empty
-                        var requiredFormat = sheet.ConditionalFormatting.AddExpression(new ExcelAddress("F" + index));
-                        requiredFormat.Style.Fill.BackgroundColor.Color = Color.Red;
-                        requiredFormat.Formula = "(F" + index + " = \"\")";
-
-                        var doneFormat = sheet.ConditionalFormatting.AddExpression(new ExcelAddress("F" + index));
-                        doneFormat.Style.Fill.BackgroundColor.Color = Color.Green;
-                        doneFormat.Formula = "(F" + index + " <> \"\")";
-
                     }
-
-                    index++;
+                    rowIndex++;
                 }
             }
-
-            // Import will be empty before population, format after
-            FormatSheetHeader(ImportSheet);
 
             // Saveit
             byte[] ExcelData = Package.GetAsByteArray();

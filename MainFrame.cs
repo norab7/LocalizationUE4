@@ -229,7 +229,7 @@ namespace TranslationEditor
                         var source = record.Source;
                         var ns = (row.Cells[1].Value != null) ? row.Cells[1].Value.ToString() : "";
                         var path = record.Path;
-                        var text = (key + customDelimiter + source + customDelimiter + ns + customDelimiter + path).Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\""); ;
+                        var text = (key + customDelimiter + source + customDelimiter + ns + customDelimiter + path); // .Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
                         sb.Append(text + "\n");
                     }
                 }

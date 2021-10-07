@@ -154,7 +154,7 @@ namespace TranslationEditor
 
             if (resultNamespace == null)
                 throw new FormatException("Can't find namespace for parent: '" + parentNamespaceName +
-                    "' and source '" + sourceArchieve.Namespace + "'" );
+                    "' and source '" + sourceArchieve.Namespace + "'");
 
             // fill namespace from childs
 
@@ -172,6 +172,13 @@ namespace TranslationEditor
                         text.Text = child.Translation.Text;
 
                     record.Translations.Add(text);
+
+                    // Add Namespace to each record, because why not.
+                    if (record.Namespace != resultNamespace.Name)
+                    {
+                        record.Namespace = resultNamespace.Name;
+                        Console.WriteLine(record.Namespace);
+                    }
                 }
             }
 
@@ -270,9 +277,9 @@ namespace TranslationEditor
             // Magic Number from:
             // UnrealEngine\Engine\Source\Runtime\Core\Private\Internationalization\TextLocalizationResource.cpp
             UInt32[] LocMetaMagic = { 0xA14CEE4F, 0x83554868, 0xBD464C6C, 0x7C50DA70 };
-            if (   LocMetaMagic[0] != BitConverter.ToUInt32(FileData, index +  0)
-                || LocMetaMagic[1] != BitConverter.ToUInt32(FileData, index +  4)
-                || LocMetaMagic[2] != BitConverter.ToUInt32(FileData, index +  8)
+            if (LocMetaMagic[0] != BitConverter.ToUInt32(FileData, index + 0)
+                || LocMetaMagic[1] != BitConverter.ToUInt32(FileData, index + 4)
+                || LocMetaMagic[2] != BitConverter.ToUInt32(FileData, index + 8)
                 || LocMetaMagic[3] != BitConverter.ToUInt32(FileData, index + 12))
                 throw new FormatException("LocMeta magic number is not correct!");
             index += 16;

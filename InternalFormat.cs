@@ -15,26 +15,56 @@ namespace TranslationEditor
         public string Key { get; set; }
         public List<InternalText> Translations { get; set; }
         public string Path { get; set; }
+        public string Namespace { get; set; }
 
         // Get or Set translation text by Culture
-        public string this[string Culture]
+        public string this[string key]
         {
             get
             {
-                foreach (var t in Translations)
-                    if (t.Culture == Culture)
-                        return t.Text;
-                throw new ArgumentException("Can't GET culture [" + Culture + "] in record: " + Source);
+                switch (key)
+                {
+                    case "Key":
+                        return Key;
+                    case "Source":
+                        return Source;
+                    case "Path":
+                        return Path;
+                    case "Namespace":
+                        return Namespace;
+                    default:
+                        foreach (var t in Translations)
+                            if (t.Culture == key)
+                                return t.Text;
+                        return "";
+                        // throw new ArgumentException("Can't GET culture [" + key + "] in record: " + Source);
+                }
             }
             set
             {
-                foreach (var t in Translations)
-                    if (t.Culture == Culture)
-                    {
-                        t.Text = value;
-                        return;
-                    }
-                throw new ArgumentException("Can't SET culture [" + Culture + "] in record: " + Source);
+                switch (key)
+                {
+                    case "Key":
+                        Key = value;
+                        break;
+                    case "Source":
+                        Source = value;
+                        break;
+                    case "Path":
+                        Path = value;
+                        break;
+                    case "Namespace":
+                        Namespace = value;
+                        break;
+                    default:
+                        foreach (var t in Translations)
+                            if (t.Culture == key)
+                            {
+                                t.Text = value;
+                                return;
+                            }
+                        throw new ArgumentException("Can't SET culture [" + key + "] in record: " + Source);
+                }
             }
         }
     }
