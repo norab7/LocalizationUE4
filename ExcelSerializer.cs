@@ -135,10 +135,10 @@ namespace TranslationEditor
             var data = new InternalFormat();
             data.Cultures = new List<string>(); // hard add 'en'
             data.NativeCulture = "en";
-            data.Cultures.Add("en");
+            //data.Cultures.Add("en");
 
             // Prime sheet names
-            var primeSheetNames = new List<string>() { "Import", "Control", "Categories" };
+            var primeSheetNames = new List<string>() { "Import", "Control" };
 
             // Excel Object Data
             var fileInfo = new FileInfo(fileName);
@@ -162,7 +162,7 @@ namespace TranslationEditor
             List<InternalRecord> records = new List<InternalRecord>(ImportRowCount / 2);
 
             // Iterate each row in ImportSheet
-            for (var row = 1; row <= ImportRowCount; row++)
+            for (var row = 1; row <= ImportRowCount; row++)                             // Row = 1 as it uses count NOT indices
             {
                 var ImportKey = ImportSheet.Cells[row, 1].Text;
 
@@ -170,7 +170,7 @@ namespace TranslationEditor
                 InternalRecord record = new InternalRecord();
                 record.Key = ImportKey;
                 record.Translations = new List<InternalText>(ImportRowCount);
-                record.Source = SafeMultilineText(ImportSheet.Cells[row, 2].Text);
+                record.Source = SafeMultilineText(ImportSheet.Cells[row, 2].Text);      // Source is the base english text for translation
                 record.Path = ImportSheet.Cells[row, 4].Text;
 
                 // Add native 'en' translation from ImportSheet
@@ -182,23 +182,30 @@ namespace TranslationEditor
                 // Iterate each translation sheet for key and translation text
                 foreach (string culture in worksheetMap.Keys)
                 {
+                    if(culture == "en") { continue; }                       // bypass 'en' for now because it's the native language
+
                     bool flag_keyFound = false;
 
                     var cultureSheet = worksheetMap[culture];
                     var cultureRowCount = cultureSheet.Dimension.Rows;
+                    
 
                     InternalText translation = new InternalText();
                     translation.Culture = culture;
 
+                    var cultureKeyColumn = GetColumnIndexFromHeader(cultureSheet, KEY);
+                    var cultureTranslationColumn = GetColumnIndexFromHeader(cultureSheet, TRANSLATION);
+
+
                     // Iterate each row in the culturesheet for matching import key value
-                    for (var cultureRow = 2; cultureRow <= cultureRowCount; cultureRow++)
+                    for (var cultureRow = 2; cultureRow <= cultureRowCount; cultureRow++)           // <= count because it's all using count NOT indices
                     {
-                        var cultureKey = cultureSheet.Cells[cultureRow, 1].Text;
+                        var cultureKey = cultureSheet.Cells[cultureRow, cultureKeyColumn].Text;
 
                         // If matching import/culture key, add translation text to translation object and break;
                         if (ImportKey == cultureKey)
                         {
-                            translation.Text = SafeMultilineText(cultureSheet.Cells[cultureRow, 5].Text);
+                            translation.Text = SafeMultilineText(cultureSheet.Cells[cultureRow, cultureTranslationColumn].Text);
                             flag_keyFound = true;
                             break;
                         }
@@ -347,8 +354,8 @@ namespace TranslationEditor
             Dictionary<string, List<string>> LAYOUT = new Dictionary<string, List<string>>()
             {
                 {IMPORT,  new List<string>() },
-                {CONTROL, new List<string>(){ ID, KEY, SOURCE, CONTEXT} },
-                {CULTURE, new List<string>(){ ID, KEY, CONTEXT, SOURCE, TRANSLATION, DONE, COMMENT} }
+                {CONTROL, new List<string>(){ ID, KEY, SOURCE, CONTEXT } },
+                {CULTURE, new List<string>(){ ID, KEY, SOURCE, CONTEXT, TRANSLATION, DONE, COMMENT} }
             };
 
             // Create Excel Document and Sheet Map
@@ -472,5 +479,6 @@ namespace TranslationEditor
             byte[] ExcelData = Package.GetAsByteArray();
             File.WriteAllBytes(ExcelName, ExcelData);
         }
+
     }
 }
