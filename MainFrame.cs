@@ -28,6 +28,13 @@ namespace TranslationEditor
         // Constructors and destructor
         //
 
+
+        private static string SafeMultilineText(string Value)
+        {
+            // replace \n to \r\n
+            return Regex.Replace(Value, "(?<!\r)\n", "\r\n");
+        }
+
         public MainFrame()
         {
             InitializeComponent();
@@ -226,11 +233,13 @@ namespace TranslationEditor
                     if (record != null)
                     {
                         var key = record.Key;
-                        var source = record.Source;
+                        var source = record.Source.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
                         var ns = (row.Cells[1].Value != null) ? row.Cells[1].Value.ToString() : "";
                         var path = record.Path;
                         var text = (key + customDelimiter + source + customDelimiter + ns + customDelimiter + path); // .Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
                         sb.Append(text + "\n");
+
+
                     }
                 }
                 Clipboard.SetText(sb.ToString());
@@ -373,7 +382,7 @@ namespace TranslationEditor
         public void OnIdle(object sender, EventArgs e)
         {
             saveMenuBtn.Enabled = (document != null) && (fileName != "");
-            saveToolBtn.Enabled = (document != null)  && (fileName != "");
+            saveToolBtn.Enabled = (document != null) && (fileName != "");
             saveAsMenuBtn.Enabled = (document != null);
             exportMenuBtn.Enabled = (document != null);
             exportToolBtn.Enabled = (document != null);
