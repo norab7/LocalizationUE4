@@ -233,7 +233,7 @@ namespace TranslationEditor
                     if (record != null)
                     {
                         var key = record.Key;
-                        var source = record.Source.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
+                        var source = record.Source.Replace("\r", "\\r").Replace("\n", "\\n"); // .Replace("\"", "\\\"");
                         var ns = (row.Cells[1].Value != null) ? row.Cells[1].Value.ToString() : "";
                         var path = record.Path;
                         var text = (key + customDelimiter + source + customDelimiter + ns + customDelimiter + path); // .Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
@@ -248,27 +248,6 @@ namespace TranslationEditor
             }
 
             return;
-
-            // OLD COPY CODE
-
-            //if (translationEdit.Focused)
-            //    translationEdit.Copy();
-            //else
-            //{
-            //    if (dataGrid.SelectedRows.Count > 0)
-            //    {
-            //        DataGridViewRow row = dataGrid.SelectedRows[0];
-            //        string text = row.Cells[4].Value.ToString();
-            //        if (escapingCharactersMenuBtn.Checked)
-            //            text = text.Replace("\r", "\\r").Replace("\n", "\\n").Replace("\"", "\\\"");
-            //        if (text.Length > 0)
-            //            Clipboard.SetText(text);
-            //        else
-            //            Clipboard.Clear();
-            //    }
-            //    else
-            //        SystemSounds.Beep.Play();
-            //}
         }
 
         private void OnPaste(object sender, EventArgs e)
