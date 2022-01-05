@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Text.RegularExpressions;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using System.Text;
 
 namespace TranslationEditor
 {
@@ -47,6 +48,41 @@ namespace TranslationEditor
         {
             // replace \n to \r\n
             return Regex.Replace(Value, "(?<!\r)\n", "\r\n");
+        }
+        private static string SafeMultilineTextToUnreal(string Value)
+        {
+
+            //if (Regex.IsMatch(Value, "\\r\\n"))
+            //{
+            //    Console.WriteLine("1" + Value);
+            //}
+            //else if (Regex.IsMatch(Value, "\r\n"))
+            //{
+            //    Console.WriteLine("2" + Value);
+            //}
+            //else
+            //{
+            //    // Console.WriteLine("NothingFound");
+            //}
+
+            //if (Value.Contains("\\r\\n"))  // WINNER WINNER CHICKEN DINNER
+            //{
+            //    Console.WriteLine("1b" + Value);
+            //}
+            //else if (Value.Contains("\r\n"))
+            //{
+            //    Console.WriteLine("2b" + Value);
+            //}
+
+            //return Regex.Replace(Value, "(\\r\\n)", System.Environment.NewLine);
+
+            if (Value.Contains("\\r\\n"))
+            {
+                StringBuilder builder = new StringBuilder(Value);
+                builder.Replace("\\r\\n", System.Environment.NewLine);
+                return builder.ToString();
+            }
+            return Value;
         }
 
         // Create single worksheet based on sheetname and columns
@@ -170,25 +206,25 @@ namespace TranslationEditor
                 InternalRecord record = new InternalRecord();
                 record.Key = ImportKey;
                 record.Translations = new List<InternalText>(ImportRowCount);
-                record.Source = SafeMultilineText(ImportSheet.Cells[row, 2].Text);      // Source is the base english text for translation
+                record.Source = SafeMultilineTextToUnreal(ImportSheet.Cells[row, 2].Text);      // Source is the base english text for translation
                 record.Path = ImportSheet.Cells[row, 4].Text;
 
                 // Add native 'en' translation from ImportSheet
                 InternalText nativeTranslation = new InternalText();
                 nativeTranslation.Culture = "en";
-                nativeTranslation.Text = SafeMultilineText(ImportSheet.Cells[row, 2].Text);
+                nativeTranslation.Text = SafeMultilineTextToUnreal(ImportSheet.Cells[row, 2].Text);
                 record.Translations.Add(nativeTranslation);
 
                 // Iterate each translation sheet for key and translation text
                 foreach (string culture in worksheetMap.Keys)
                 {
-                    if(culture == "en") { continue; }                       // bypass 'en' for now because it's the native language
+                    if (culture == "en") { continue; }                       // bypass 'en' for now because it's the native language
 
                     bool flag_keyFound = false;
 
                     var cultureSheet = worksheetMap[culture];
                     var cultureRowCount = cultureSheet.Dimension.Rows;
-                    
+
 
                     InternalText translation = new InternalText();
                     translation.Culture = culture;
@@ -205,7 +241,7 @@ namespace TranslationEditor
                         // If matching import/culture key, add translation text to translation object and break;
                         if (ImportKey == cultureKey)
                         {
-                            translation.Text = SafeMultilineText(cultureSheet.Cells[cultureRow, cultureTranslationColumn].Text);
+                            translation.Text = SafeMultilineTextToUnreal(cultureSheet.Cells[cultureRow, cultureTranslationColumn].Text); // SafeMultilineText(cultureSheet.Cells[cultureRow, cultureTranslationColumn].Text);
                             flag_keyFound = true;
                             break;
                         }
